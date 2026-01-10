@@ -31,7 +31,13 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+| Principle | Checkpoint | Status |
+|-----------|-----------|--------|
+| I. Reliability | Feature maintains existing phase functionality; acceptance criteria defined | [ ] |
+| II. Maintainability | Modular design; single responsibility; documented interfaces | [ ] |
+| III. Security & Privacy | No hardcoded secrets; data encryption plan (if applicable) | [ ] |
+| IV. Reproducibility | Dependencies declared; setup documented; deterministic builds | [ ] |
+| V. Scalability | Stateless services where possible; multi-user data model (Phase II+) | [ ] |
 
 ## Project Structure
 
