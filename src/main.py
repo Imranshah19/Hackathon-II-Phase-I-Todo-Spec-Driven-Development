@@ -1,5 +1,13 @@
 """Main entry point for the In-Memory Console Todo Application."""
 
+import sys
+from pathlib import Path
+
+# Add project root to path for direct script execution
+_project_root = Path(__file__).parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
 from src.services.task_manager import TaskManager
 from src.cli.menu import display_menu
 from src.cli.handlers import (
