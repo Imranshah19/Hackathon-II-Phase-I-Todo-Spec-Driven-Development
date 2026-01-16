@@ -5,6 +5,9 @@ description = "In-Memory Console Todo Application - Phase I of Multi-Phase Todo 
 requires-python = ">=3.13"
 readme = "specs/001-console-todo-app/quickstart.md"
 
+[project.scripts]
+todo = "src.main:main"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
