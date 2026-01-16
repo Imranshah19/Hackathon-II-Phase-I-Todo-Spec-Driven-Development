@@ -1,0 +1,2 @@
+# Development dependencies for Phase I Console Todo App
+pytest>=8.0.0
