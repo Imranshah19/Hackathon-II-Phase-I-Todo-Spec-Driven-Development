@@ -5,7 +5,7 @@ from src.cli.menu import display_menu
 from src.cli.handlers import (
     handle_view_tasks,
     handle_add_task,
-    handle_mark_complete,
+    handle_toggle_status,
     handle_update_task,
     handle_delete_task,
     handle_exit,
@@ -34,7 +34,7 @@ def main() -> None:
         elif choice == "3":
             handle_update_task(manager)
         elif choice == "4":
-            handle_mark_complete(manager)
+            handle_toggle_status(manager)
         elif choice == "5":
             handle_delete_task(manager)
         elif choice == "6":

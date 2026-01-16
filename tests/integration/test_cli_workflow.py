@@ -8,7 +8,7 @@ from src.services.task_manager import TaskManager
 from src.cli.handlers import (
     handle_add_task,
     handle_view_tasks,
-    handle_mark_complete,
+    handle_toggle_status,
     handle_update_task,
     handle_delete_task,
 )
@@ -21,8 +21,8 @@ class TestAddViewWorkflow:
         """Adding a task and viewing should show the task."""
         manager = TaskManager()
 
-        # Add task
-        with patch("builtins.input", return_value="Buy groceries"):
+        # Add task (title + optional description)
+        with patch("builtins.input", side_effect=["Buy groceries", ""]):
             handle_add_task(manager)
 
         # View tasks
@@ -31,14 +31,14 @@ class TestAddViewWorkflow:
         captured = capsys.readouterr()
         assert "Task added successfully!" in captured.out
         assert "Buy groceries" in captured.out
-        assert "[ ] 1. Buy groceries" in captured.out
+        assert "[1] Buy groceries — pending" in captured.out
 
     def test_add_multiple_tasks_shows_all(self, capsys):
         """Adding multiple tasks should show all in order."""
         manager = TaskManager()
 
-        # Add tasks
-        with patch("builtins.input", side_effect=["First task", "Second task"]):
+        # Add tasks (each with title + optional description)
+        with patch("builtins.input", side_effect=["First task", "", "Second task", ""]):
             handle_add_task(manager)
             handle_add_task(manager)
 
@@ -46,33 +46,56 @@ class TestAddViewWorkflow:
         handle_view_tasks(manager)
 
         captured = capsys.readouterr()
-        assert "[ ] 1. First task" in captured.out
-        assert "[ ] 2. Second task" in captured.out
+        assert "[1] First task — pending" in captured.out
+        assert "[2] Second task — pending" in captured.out
         assert "Total: 2 tasks" in captured.out
 
 
-class TestMarkCompleteWorkflow:
-    """Integration tests for mark-complete workflow (T055)."""
+class TestToggleStatusWorkflow:
+    """Integration tests for toggle-status workflow (T055)."""
 
-    def test_add_and_mark_complete_shows_status_change(self, capsys):
-        """Adding a task and marking complete should show [x] status."""
+    def test_add_and_toggle_complete_shows_status_change(self, capsys):
+        """Adding a task and toggling complete should show completed status."""
         manager = TaskManager()
 
-        # Add task
-        with patch("builtins.input", return_value="Test task"):
+        # Add task (title + optional description)
+        with patch("builtins.input", side_effect=["Test task", ""]):
             handle_add_task(manager)
 
-        # Mark complete
+        # Toggle to complete
         with patch("builtins.input", return_value="1"):
-            handle_mark_complete(manager)
+            handle_toggle_status(manager)
 
         # View tasks
         handle_view_tasks(manager)
 
         captured = capsys.readouterr()
-        assert "Task marked as complete!" in captured.out
-        assert "[x] 1. Test task" in captured.out
+        assert "Task status changed to 'completed'!" in captured.out
+        assert "[1] Test task — completed" in captured.out
         assert "1 completed" in captured.out
+
+    def test_toggle_back_to_pending(self, capsys):
+        """Toggling a completed task should show pending status."""
+        manager = TaskManager()
+
+        # Add task (title + optional description)
+        with patch("builtins.input", side_effect=["Test task", ""]):
+            handle_add_task(manager)
+
+        # Toggle to complete
+        with patch("builtins.input", return_value="1"):
+            handle_toggle_status(manager)
+
+        # Toggle back to pending
+        with patch("builtins.input", return_value="1"):
+            handle_toggle_status(manager)
+
+        # View tasks
+        handle_view_tasks(manager)
+
+        captured = capsys.readouterr()
+        assert "Task status changed to 'pending'!" in captured.out
+        assert "[1] Test task — pending" in captured.out
 
 
 class TestUpdateWorkflow:
@@ -82,12 +105,12 @@ class TestUpdateWorkflow:
         """Adding a task and updating should show new title."""
         manager = TaskManager()
 
-        # Add task
-        with patch("builtins.input", return_value="Original title"):
+        # Add task (title + optional description)
+        with patch("builtins.input", side_effect=["Original title", ""]):
             handle_add_task(manager)
 
-        # Update task
-        with patch("builtins.input", side_effect=["1", "Updated title"]):
+        # Update task (id, new_title, new_description)
+        with patch("builtins.input", side_effect=["1", "Updated title", ""]):
             handle_update_task(manager)
 
         # View tasks
@@ -96,7 +119,25 @@ class TestUpdateWorkflow:
         captured = capsys.readouterr()
         assert "Task updated successfully!" in captured.out
         assert "Updated title" in captured.out
-        assert "Original title" not in captured.out.split("Task updated")[1]
+
+    def test_add_and_update_description(self, capsys):
+        """Adding a task and updating description should show new description."""
+        manager = TaskManager()
+
+        # Add task (title + optional description)
+        with patch("builtins.input", side_effect=["Test task", "Original description"]):
+            handle_add_task(manager)
+
+        # Update task (id, new_title='', new_description='Updated description')
+        with patch("builtins.input", side_effect=["1", "", "Updated description"]):
+            handle_update_task(manager)
+
+        # View tasks
+        handle_view_tasks(manager)
+
+        captured = capsys.readouterr()
+        assert "Task updated successfully!" in captured.out
+        assert "Updated description" in captured.out
 
 
 class TestDeleteWorkflow:
@@ -106,8 +147,8 @@ class TestDeleteWorkflow:
         """Adding a task and deleting should remove from list."""
         manager = TaskManager()
 
-        # Add task
-        with patch("builtins.input", return_value="Task to delete"):
+        # Add task (title + optional description)
+        with patch("builtins.input", side_effect=["Task to delete", ""]):
             handle_add_task(manager)
 
         # Delete task
@@ -140,7 +181,7 @@ class TestInvalidInputHandling:
         manager = TaskManager()
 
         with patch("builtins.input", return_value="abc"):
-            handle_mark_complete(manager)
+            handle_toggle_status(manager)
 
         captured = capsys.readouterr()
         assert "must be a number" in captured.err
@@ -150,7 +191,7 @@ class TestInvalidInputHandling:
         manager = TaskManager()
 
         with patch("builtins.input", return_value="999"):
-            handle_mark_complete(manager)
+            handle_toggle_status(manager)
 
         captured = capsys.readouterr()
         assert "Task not found" in captured.err

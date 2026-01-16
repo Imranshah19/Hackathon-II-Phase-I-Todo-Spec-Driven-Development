@@ -6,7 +6,7 @@ MENU_OPTIONS = """=== Todo App ===
 1. Add Task
 2. View Tasks
 3. Update Task
-4. Mark Complete
+4. Toggle Complete/Incomplete
 5. Delete Task
 6. Exit
 
@@ -34,8 +34,11 @@ def format_task_list(tasks: list[Task]) -> str:
     completed_count = 0
 
     for task in tasks:
-        status = "[x]" if task.completed else "[ ]"
-        lines.append(f"{status} {task.id}. {task.title}")
+        # Format: [1] Meeting with team — pending
+        task_line = f"[{task.id}] {task.title} — {task.status}"
+        if task.description:
+            task_line += f"\n    {task.description}"
+        lines.append(task_line)
         if task.completed:
             completed_count += 1
 

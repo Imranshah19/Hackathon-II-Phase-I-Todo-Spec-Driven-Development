@@ -47,8 +47,25 @@ class TestAddTask:
         assert task2.id == 2
         assert task1.title == "First task"
         assert task2.title == "Second task"
-        assert task1.completed is False
-        assert task2.completed is False
+        assert task1.status == "pending"
+        assert task2.status == "pending"
+
+    def test_add_task_with_description(self):
+        """add_task should accept optional description."""
+        manager = TaskManager()
+
+        task = manager.add_task("Test task", "A detailed description")
+
+        assert task.title == "Test task"
+        assert task.description == "A detailed description"
+
+    def test_add_task_default_empty_description(self):
+        """add_task should have empty description by default."""
+        manager = TaskManager()
+
+        task = manager.add_task("Test task")
+
+        assert task.description == ""
 
     def test_add_task_rejects_empty_title(self):
         """add_task should raise ValueError for empty title."""
@@ -70,37 +87,42 @@ class TestAddTask:
         assert "exceeds maximum length" in str(exc_info.value)
 
 
-class TestMarkComplete:
-    """Tests for mark_complete method (User Story 3)."""
+class TestToggleStatus:
+    """Tests for toggle_status method (User Story 3)."""
 
-    def test_mark_complete_changes_task_status(self):
-        """mark_complete should change task completed status to True."""
+    def test_toggle_status_changes_pending_to_completed(self):
+        """toggle_status should change status from pending to completed."""
         manager = TaskManager()
         task = manager.add_task("Test task")
 
-        result = manager.mark_complete(task.id)
+        success, new_status = manager.toggle_status(task.id)
 
-        assert result is True
+        assert success is True
+        assert new_status == "completed"
+        assert task.status == "completed"
         assert task.completed is True
 
-    def test_mark_complete_returns_false_for_nonexistent_id(self):
-        """mark_complete should return False for non-existent task ID."""
-        manager = TaskManager()
-
-        result = manager.mark_complete(999)
-
-        assert result is False
-
-    def test_mark_complete_handles_already_complete_task(self):
-        """mark_complete should return False if task already complete."""
+    def test_toggle_status_changes_completed_to_pending(self):
+        """toggle_status should change status from completed to pending."""
         manager = TaskManager()
         task = manager.add_task("Test task")
-        manager.mark_complete(task.id)  # First mark
+        manager.toggle_status(task.id)  # Mark as completed
 
-        result = manager.mark_complete(task.id)  # Second mark
+        success, new_status = manager.toggle_status(task.id)  # Toggle back
 
-        assert result is False
-        assert task.completed is True
+        assert success is True
+        assert new_status == "pending"
+        assert task.status == "pending"
+        assert task.completed is False
+
+    def test_toggle_status_returns_false_for_nonexistent_id(self):
+        """toggle_status should return (False, '') for non-existent task ID."""
+        manager = TaskManager()
+
+        success, new_status = manager.toggle_status(999)
+
+        assert success is False
+        assert new_status == ""
 
 
 class TestUpdateTask:
@@ -111,16 +133,38 @@ class TestUpdateTask:
         manager = TaskManager()
         task = manager.add_task("Original title")
 
-        result = manager.update_task(task.id, "New title")
+        result = manager.update_task(task.id, new_title="New title")
 
         assert result is True
         assert task.title == "New title"
+
+    def test_update_task_changes_description(self):
+        """update_task should change the task description."""
+        manager = TaskManager()
+        task = manager.add_task("Test task", "Original description")
+
+        result = manager.update_task(task.id, new_description="New description")
+
+        assert result is True
+        assert task.description == "New description"
+        assert task.title == "Test task"  # Title unchanged
+
+    def test_update_task_changes_both_title_and_description(self):
+        """update_task should change both title and description."""
+        manager = TaskManager()
+        task = manager.add_task("Original title", "Original description")
+
+        result = manager.update_task(task.id, "New title", "New description")
+
+        assert result is True
+        assert task.title == "New title"
+        assert task.description == "New description"
 
     def test_update_task_returns_false_for_nonexistent_id(self):
         """update_task should return False for non-existent task ID."""
         manager = TaskManager()
 
-        result = manager.update_task(999, "New title")
+        result = manager.update_task(999, new_title="New title")
 
         assert result is False
 
@@ -130,7 +174,7 @@ class TestUpdateTask:
         task = manager.add_task("Original title")
 
         with pytest.raises(ValueError) as exc_info:
-            manager.update_task(task.id, "")
+            manager.update_task(task.id, new_title="")
 
         assert "cannot be empty" in str(exc_info.value)
         assert task.title == "Original title"  # Title unchanged

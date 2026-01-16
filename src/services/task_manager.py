@@ -25,11 +25,12 @@ class TaskManager:
         """
         return sorted(self._tasks.values(), key=lambda task: task.id)
 
-    def add_task(self, title: str) -> Task:
-        """Create a new task with the given title.
+    def add_task(self, title: str, description: str = "") -> Task:
+        """Create a new task with the given title and optional description.
 
         Args:
-            title: Task description (1-200 chars, not empty).
+            title: Task title (1-200 chars, not empty).
+            description: Optional task description.
 
         Returns:
             The newly created Task with assigned ID.
@@ -41,7 +42,7 @@ class TaskManager:
         if not is_valid:
             raise ValueError(error)
 
-        task = Task(id=self._next_id, title=title)
+        task = Task(id=self._next_id, title=title, description=description)
         self._tasks[self._next_id] = task
         self._next_id += 1
         return task
@@ -57,30 +58,35 @@ class TaskManager:
         """
         return self._tasks.get(task_id)
 
-    def mark_complete(self, task_id: int) -> bool:
-        """Mark a task as complete.
+    def toggle_status(self, task_id: int) -> tuple[bool, str]:
+        """Toggle task status between 'pending' and 'completed'.
 
         Args:
-            task_id: The ID of the task to mark complete.
+            task_id: The ID of the task to toggle.
 
         Returns:
-            True if task was marked complete, False if task not found
-            or already complete.
+            Tuple of (success, new_status). Returns (False, "") if task not found.
         """
         task = self.get_task(task_id)
         if task is None:
-            return False
-        if task.completed:
-            return False
-        task.completed = True
-        return True
+            return (False, "")
 
-    def update_task(self, task_id: int, new_title: str) -> bool:
-        """Update the title of an existing task.
+        if task.status == "pending":
+            task.status = "completed"
+        else:
+            task.status = "pending"
+
+        return (True, task.status)
+
+    def update_task(
+        self, task_id: int, new_title: str | None = None, new_description: str | None = None
+    ) -> bool:
+        """Update the title and/or description of an existing task.
 
         Args:
             task_id: The ID of the task to update.
-            new_title: The new title (1-200 chars, not empty).
+            new_title: The new title (1-200 chars, not empty). None to keep existing.
+            new_description: The new description. None to keep existing.
 
         Returns:
             True if task was updated, False if task not found.
@@ -88,15 +94,19 @@ class TaskManager:
         Raises:
             ValueError: If new_title is empty or exceeds 200 characters.
         """
-        is_valid, error = validate_title(new_title)
-        if not is_valid:
-            raise ValueError(error)
-
         task = self.get_task(task_id)
         if task is None:
             return False
 
-        task.title = new_title
+        if new_title is not None:
+            is_valid, error = validate_title(new_title)
+            if not is_valid:
+                raise ValueError(error)
+            task.title = new_title
+
+        if new_description is not None:
+            task.description = new_description
+
         return True
 
     def delete_task(self, task_id: int) -> Task | None:
