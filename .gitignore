@@ -51,3 +51,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Package manager locks (using requirements-dev.txt)
+uv.lock
